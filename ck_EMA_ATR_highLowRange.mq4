@@ -8,24 +8,32 @@
 #property description "Moving Average sample expert advisor"
 
 #define MAGICMA  20201220
-input double Lots          =0.01;
-input int    atrPeriod     =24;
-input int    MovingShift   =1;
-
-input int   emaPeriod20    =24;
-input int   emaPeriod50    =48;
-input int   emaPeriod70    =144;
-
-input int highLowRangePeriod = 12; //hour
-
-input double takeProfitRatio = 6;
-input double stopLossRatio = 3;
-
+double Lots          =0.01;                  //input
+int    atrPeriod     =24;                 //input
+int    MovingShift   =1;                  //input
+int   emaPeriod20    =24;                 //input
+int   emaPeriod50    =48;                 //input
+int   emaPeriod70    =144;                   //input
+int   emaCriteriaContinousCount = 24; //bars
+int   highLowRangePeriod = 24; //hour                   //input
+double takeProfitRatio = 6;                  //input
+double stopLossRatio = 3;                 //input
 
 double ema20;
 double ema50;
 double ema70;
 double atr;
+
+int ema_gt_criteria_count=0;
+
+bool isfulfill_BuyEmaCount_Criteria(bool ema_gt_criteria){
+   if(ema_gt_criteria) {
+         ema_gt_criteria_count++;
+   }else{
+      ema_gt_criteria_count = 0;
+   }
+   return ema_gt_criteria_count >= emaCriteriaContinousCount;
+}
 
 //| Calculate open positions
 int CalculateCurrentOrders(string symbol) {
@@ -40,6 +48,7 @@ int CalculateCurrentOrders(string symbol) {
    if(buys>0) return(buys);
    else       return(-sells);
 }
+
 double LotsOptimized() {
    return 0.01;
 }
@@ -87,14 +96,13 @@ void OnTick() {
       double periodHigh =High[iHighest(Symbol(),PERIOD_H1,MODE_HIGH,highLowRangePeriod,1)];
       double periodLow  =Low [iHighest(Symbol(),PERIOD_H1,MODE_LOW, highLowRangePeriod,1)];
 
-      bool ema_gt_20_50_70 = ema20 >= ema50 && ema50 >= ema70;
-      bool ema_lt_20_50_70 = ema20 <= ema50 && ema50 <= ema70;
+      bool ema_gt_criteria = ema20 >= ema50 && ema50 >= ema70;
+      bool ema_lt_criteria = ema20 <= ema50 && ema50 <= ema70;
 
-      bool ema_gt_20_50_150 = ema20 >= ema50 && ema50 >= ema150;
-      bool ema_lt_20_50_150 = ema20 <= ema50 && ema50 <= ema150;
+      // bool ATR細過180Range_20% = 
 
-      bool buyCondition =  Close[0]>ema20 && Close[0]>periodHigh && ema_gt_20_50_70; //&& atr < 0.0015;
-      //bool sellCondition = Close[0]<ema20 && Close[0]<periodHigh && ema_lt_20_50_70; //&& atr < 0.0003;
+      bool buyCondition =  Close[0]>ema20 && Close[0]>periodHigh && isfulfill_BuyEmaCount_Criteria(ema_gt_criteria); //&& atr < 0.0015;
+      //bool sellCondition = Close[0]<ema20 && Close[0]<periodHigh && ema_lt_criteria; //&& atr < 0.0003;
 
       if(buyCondition) {
          buyOrderSendWithTlSp(Ask);
@@ -104,5 +112,6 @@ void OnTick() {
       // }
       
    }
+   //--- check close
 }
 //+------------------------------------------------------------------+
