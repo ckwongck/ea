@@ -16,15 +16,27 @@ int   emaPeriod50    =48;                 //input
 int   emaPeriod70    =144;                   //input
 int   emaCriteriaContinousCount = 24; //bars
 int   highLowRangePeriod = 24; //hour                   //input
-double takeProfitRatio = 6;                  //input
-double stopLossRatio = 3;                 //input
+double takeProfitRatio = 3;                  //input
+double stopLossRatio = 2;                 //input
 
-double ema20;
-double ema50;
-double ema70;
-double atr;
+double trailHighLowPrice =0;
+double trailAmount = 0;
+
+double ema20, ema50, ema70, atr;
+
+double currentPrice = 0;
 
 int ema_gt_criteria_count=0;
+
+void resetTrailValues(){ // trail
+   trailHighLowPrice =0;
+   trailAmount = 0;
+}
+
+void setTrailValues(double i_trailHighLowPrice, double i_trailAmount){ // trail
+   trailHighLowPrice = i_trailHighLowPrice;
+   trailAmount = i_trailAmount;
+}
 
 bool isfulfill_BuyEmaCount_Criteria(bool ema_gt_criteria){
    if(ema_gt_criteria) {
@@ -54,14 +66,15 @@ double LotsOptimized() {
 }
 
 void buyOrderSendWithTlSp(double price) {
-   double takeProfit = price + takeProfitRatio * atr;
-   double stopLoss   = price - stopLossRatio * atr;
+   double takeProfit = 0; //price + takeProfitRatio * atr;
+   double stopLoss   = 0; //price - stopLossRatio * atr;
    const string comment= "long" + stopLoss + "-" + takeProfit;
 
    int ticket=OrderSend(Symbol(),OP_BUY,LotsOptimized(),price,3,stopLoss, takeProfit,comment,MAGICMA,0,Green);
 
    if(ticket>0) {
       if(OrderSelect(ticket,SELECT_BY_TICKET,MODE_TRADES))
+         setTrailValues(price, stopLossRatio * atr); // trail
          Print("buy order opened : ",OrderOpenPrice());
    } else
       Print("Error opening BUY order : ",GetLastError());
@@ -76,9 +89,29 @@ void sellOrderSendWithTlSp(double price) {
 
    if(ticket>0) {
       if(OrderSelect(ticket,SELECT_BY_TICKET,MODE_TRADES))
+         setTrailValues(price, stopLossRatio * atr); // trail
          Print("sell order opened : ",OrderOpenPrice());
    } else
       Print("Error opening BUY order : ",GetLastError());
+}
+
+void closeAllPosition() {
+   for(int i=0; i<OrdersTotal(); i++) {
+      if(OrderSelect(i,SELECT_BY_POS,MODE_TRADES)==false) break;
+      if(OrderMagicNumber()!=MAGICMA || OrderSymbol()!=Symbol()) continue;
+
+      if (OrderType()==OP_BUY) {
+         if(!OrderClose(OrderTicket(), OrderLots(), Bid, 3,White)){
+            Print("OrderClose error ", GetLastError());
+         }
+      }
+      else if (OrderType()==OP_SELL){
+         if(!OrderClose(OrderTicket(), OrderLots(), Ask, 3,White)){
+            Print("OrderClose error ", GetLastError());
+         }
+      }
+   }
+   resetTrailValues();
 }
 
 void OnTick() {
@@ -87,7 +120,9 @@ void OnTick() {
       return;
 
    //--- calculate open orders by current symbol
-   if(CalculateCurrentOrders(Symbol())==0) {
+   int positions = CalculateCurrentOrders(Symbol());
+   currentPrice = Close[0];
+   if(positions==0) {
       ema20 =iMA( NULL,PERIOD_H1,emaPeriod20,MovingShift,MODE_EMA,PRICE_CLOSE,0);
       ema50 =iMA( NULL,PERIOD_H1,emaPeriod50,MovingShift,MODE_EMA,PRICE_CLOSE,0);
       ema70 =iMA( NULL,PERIOD_H1,emaPeriod70,MovingShift,MODE_EMA,PRICE_CLOSE,0);
@@ -101,8 +136,8 @@ void OnTick() {
 
       // bool ATR細過180Range_20% = 
 
-      bool buyCondition =  Close[0]>ema20 && Close[0]>periodHigh && isfulfill_BuyEmaCount_Criteria(ema_gt_criteria); //&& atr < 0.0015;
-      //bool sellCondition = Close[0]<ema20 && Close[0]<periodHigh && ema_lt_criteria; //&& atr < 0.0003;
+      bool buyCondition =  currentPrice>ema20 && currentPrice>periodHigh && isfulfill_BuyEmaCount_Criteria(ema_gt_criteria); //&& atr < 0.0015;
+      //bool sellCondition = currentPrice<ema20 && currentPrice<periodHigh && ema_lt_criteria; //&& atr < 0.0003;
 
       if(buyCondition) {
          buyOrderSendWithTlSp(Ask);
@@ -112,6 +147,21 @@ void OnTick() {
       // }
       
    }
-   //--- check close
+   else if(positions > 0){ // long position
+      if(currentPrice < trailHighLowPrice - trailAmount){
+         closeAllPosition();
+      }
+      else if (currentPrice > trailHighLowPrice){
+         trailHighLowPrice = currentPrice;
+      }
+   }
+   else {// positions < 0   // short position
+      if(currentPrice > trailHighLowPrice + trailAmount){
+         closeAllPosition();
+      }
+      else if (currentPrice < trailHighLowPrice){
+         trailHighLowPrice = currentPrice;
+      }
+   }
 }
 //+------------------------------------------------------------------+
