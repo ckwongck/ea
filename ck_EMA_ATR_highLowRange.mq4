@@ -19,58 +19,59 @@
 /*input*/ double stopLossRatio = 3.5;
 /*input*/ double takeProfitRatio = 2 * stopLossRatio;
 
-double holdingOrderPrice = 0;
-double trailHighLowPrice = 0;
-double trailAmount = 0;
+class TrailOrder{
+   public: 
+   double holdingOrderPrice;
+   double trailHighLowPrice;
+   double trailAmount;
 
-double ema20, ema50, ema70, atr;
-
-double currentPrice = 0;
-
-int ema_gt_criteria_count = 0;
-int ema_lt_criteria_count = 0;
-
-//+------------------------------------------------------------------+
-//| trail                                                            |
-//+------------------------------------------------------------------+
-void resetTrailValues() {
-   holdingOrderPrice = 0;
-   trailHighLowPrice = 0;
-   trailAmount = 0;
-}
-
-//+------------------------------------------------------------------+
-//|  trail                                                           |
-//+------------------------------------------------------------------+
-void setTrailValues(double i_price, double i_trailAmount) {
-   holdingOrderPrice = i_price;
-   trailHighLowPrice = i_price;
-   trailAmount = i_trailAmount;
-}
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-bool isfulfill_BuyEmaCount_Criteria(bool ema_gt_criteria) {
-   if (ema_gt_criteria) {
-      ema_gt_criteria_count++;
-   } else {
-      ema_gt_criteria_count = 0;
+   TrailOrder(){}
+   void resetTrailValues() {
+      holdingOrderPrice = 0;
+      trailHighLowPrice = 0;
+      trailAmount = 0;
    }
-   return ema_gt_criteria_count >= emaCriteriaContinousCount;
-}
+   void setTrailValues(double i_price, double i_trailAmount) {
+      holdingOrderPrice = i_price;
+      trailHighLowPrice = i_price;
+      trailAmount = i_trailAmount;
+   }
+};
 
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-bool isfulfill_SellEmaCount_Criteria(bool ema_lt_criteria) {
-   if (ema_lt_criteria) {
-      ema_lt_criteria_count++;
-   } else {
+class EmaCountCriteria{
+   public:
+   int ema_gt_criteria_count;
+   int ema_lt_criteria_count;
+
+   EmaCountCriteria(){
+      ema_gt_criteria_count = 0;
       ema_lt_criteria_count = 0;
    }
-   return ema_lt_criteria_count >= emaCriteriaContinousCount;
-}
+
+   bool isBuy(bool ema_gt_criteria) {
+      if (ema_gt_criteria) {
+         ema_gt_criteria_count++;
+      } else {
+         ema_gt_criteria_count = 0;
+      }
+      return ema_gt_criteria_count >= emaCriteriaContinousCount;
+   }
+
+   bool isSell(bool ema_lt_criteria) {
+      if (ema_lt_criteria) {
+         ema_lt_criteria_count++;
+      } else {
+         ema_lt_criteria_count = 0;
+      }
+      return ema_lt_criteria_count >= emaCriteriaContinousCount;
+   }
+};
+
+TrailOrder trailOrder ();
+EmaCountCriteria emaCountCriteria ();
+
+static double ema20, ema50, ema70, atr;
+static double currentPrice = 0;
 
 //| Calculate open positions
 int calculateCurrentOrders(string symbol) {
@@ -110,7 +111,7 @@ void buyOrderSendWithTlSp(double price, double stopLossAmount) {
 
    if (ticket > 0) {
       if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES))
-         setTrailValues(price, stopLossAmount); // trail
+         trailOrder.setTrailValues(price, stopLossAmount); // trail
       Print("buy order opened : ", OrderOpenPrice());
    } else
       Print("Error opening BUY order : ", GetLastError());
@@ -128,7 +129,7 @@ void sellOrderSendWithTlSp(double price, double stopLossAmount) {
 
    if (ticket > 0) {
       if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES))
-         setTrailValues(price, stopLossAmount); // trail
+         trailOrder.setTrailValues(price, stopLossAmount); // trail
       Print("sell order opened : ", OrderOpenPrice());
    } else
       Print("Error opening BUY order : ", GetLastError());
@@ -154,7 +155,7 @@ void closeAllPosition() {
          }
       }
    }
-   resetTrailValues();
+   trailOrder.resetTrailValues();
 }
 
 //+------------------------------------------------------------------+
@@ -182,8 +183,8 @@ void OnTick() {
 
       // bool ATR細過180Range_20% =
 
-      bool buyCondition = currentPrice > periodHigh && isfulfill_BuyEmaCount_Criteria(ema_gt_criteria);  //&& atr < 0.0015; currentPrice>ema20;
-      bool sellCondition = currentPrice < periodLow && isfulfill_SellEmaCount_Criteria(ema_lt_criteria); //&& atr < 0.0003; currentPrice<ema20;
+      bool buyCondition = currentPrice > periodHigh && emaCountCriteria.isBuy(ema_gt_criteria);  //&& atr < 0.0015; currentPrice>ema20;
+      bool sellCondition = currentPrice < periodLow && emaCountCriteria.isSell(ema_lt_criteria); //&& atr < 0.0003; currentPrice<ema20;
 
       if (buyCondition) {
          buyOrderSendWithTlSp(Ask, stopLossRatio * atr);
@@ -192,18 +193,20 @@ void OnTick() {
       }
    } else if (positions > 0) {
       // long position
-      if (currentPrice < trailHighLowPrice - trailAmount) {
+      if (currentPrice < trailOrder.trailHighLowPrice - trailOrder.trailAmount) {
          closeAllPosition();
-      } else if (currentPrice > trailHighLowPrice) {
-         trailHighLowPrice = currentPrice;
+      } else if (currentPrice > trailOrder.trailHighLowPrice) {
+         trailOrder.trailHighLowPrice = currentPrice;
       }
    } else {
       // positions < 0   // short position
-      if (currentPrice > trailHighLowPrice + trailAmount) {
+      if (currentPrice > trailOrder.trailHighLowPrice + trailOrder.trailAmount) {
          closeAllPosition();
-      } else if (currentPrice < trailHighLowPrice) {
-         trailHighLowPrice = currentPrice;
+      } else if (currentPrice < trailOrder.trailHighLowPrice) {
+         trailOrder.trailHighLowPrice = currentPrice;
       }
    }
 }
 //+------------------------------------------------------------------+
+
+
