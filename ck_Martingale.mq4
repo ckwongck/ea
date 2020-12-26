@@ -69,9 +69,6 @@ class EmaCountCriteria{
 TrailOrder trailOrder ();
 EmaCountCriteria emaCountCriteria ();
 
-static double ema20, ema50, ema70, atr;
-static double currentPrice = 0;
-
 //| Calculate open positions
 int calculateCurrentOrders(string symbol) {
    int buys = 0, sells = 0;
@@ -177,44 +174,69 @@ void OnTick() {
 
 //--- calculate open orders by current symbol
    int positions = calculateCurrentOrders(Symbol());
-   currentPrice = Close[0];
+   double currentPrice = Close[0];
    if (positions == 0) {
-      ema20 = iMA(NULL, PERIOD_M5, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
-      ema50 = iMA(NULL, PERIOD_M5, emaPeriod50, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
-      ema70 = iMA(NULL, PERIOD_M5, emaPeriod70, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
+      double ema20_s1 = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
+      double ema50_s1 = iMA(NULL, PERIOD_H1, emaPeriod50, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
+      double ema70_s1 = iMA(NULL, PERIOD_H1, emaPeriod70, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
       
-      double ema20_s3 = iMA(NULL, PERIOD_M5, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 12);
-      double ema20_s5 = iMA(NULL, PERIOD_M5, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 28);
+      double ema20_s3 = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 12);
+      double ema50_s3 = iMA(NULL, PERIOD_H1, emaPeriod50, MovingShift, MODE_EMA, PRICE_CLOSE, 12);
+      double ema70_s3 = iMA(NULL, PERIOD_H1, emaPeriod70, MovingShift, MODE_EMA, PRICE_CLOSE, 12);
 
-      double ema20_1H = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
-      double ema20_3H = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 3);
-      double ema20_5H = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 5);
+      double ema20_s5 = iMA(NULL, PERIOD_H1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 28);
+      double ema50_s5 = iMA(NULL, PERIOD_H1, emaPeriod50, MovingShift, MODE_EMA, PRICE_CLOSE, 28);
+      double ema70_s5 = iMA(NULL, PERIOD_H1, emaPeriod70, MovingShift, MODE_EMA, PRICE_CLOSE, 28);
+
+      double ema20_1H = iMA(NULL, PERIOD_H4, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
+      double ema20_3H = iMA(NULL, PERIOD_H4, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 3);
+      double ema20_5H = iMA(NULL, PERIOD_H4, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 5);
 
       double ema20_1W = iMA(NULL, PERIOD_W1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 1);
       double ema20_2W = iMA(NULL, PERIOD_W1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 2);
       double ema20_3W = iMA(NULL, PERIOD_W1, emaPeriod20, MovingShift, MODE_EMA, PRICE_CLOSE, 3);
 
-      atr = iATR(NULL, PERIOD_CURRENT, atrPeriod, MovingShift);
-      double periodHigh = iHigh(NULL, PERIOD_CURRENT, iHighest(NULL, PERIOD_CURRENT, MODE_HIGH, highLowRangePeriod, 1)) + 1 * atr;
-      double periodLow = iLow(NULL, PERIOD_CURRENT, iLowest(NULL, PERIOD_CURRENT, MODE_LOW, highLowRangePeriod, 1)) + 1 * atr;
+      double atr = iATR(NULL, PERIOD_H1, atrPeriod, MovingShift);
+      double periodHigh = iHigh(NULL, PERIOD_H1, iHighest(NULL, PERIOD_H1, MODE_HIGH, highLowRangePeriod, 1)) + 1 * atr;
+      double periodLow = iLow(NULL, PERIOD_H1, iLowest(NULL, PERIOD_H1, MODE_LOW, highLowRangePeriod, 1)) + 1 * atr;
 
-      bool ema_gt_criteria = ema20 >= ema50 && ema50 >= ema70;
-      bool ema_lt_criteria = ema20 <= ema50 && ema50 <= ema70;
-      bool ema_shift_growth_m5_up = ema20 >= ema20_s3 && ema20_s3 >= ema20_s5;
-      bool ema_shift_growth_m5_down = ema20 <= ema20_s3 && ema20_s3 <= ema20_s5;
+      bool ema_gt_criteria_s1 = ema20_s1 >= ema50_s1 && ema50_s1 >= ema70_s1;
+      bool ema_gt_criteria_s3 = ema20_s3 >= ema50_s3 && ema50_s3 >= ema70_s3;
+      bool ema_gt_criteria_s5 = ema20_s5 >= ema50_s5 && ema50_s5 >= ema70_s5;
 
-      bool ema_shift_growth_H_up = ema20_1H >= ema20_3H && ema20_3H >= ema20_5H;
-      bool ema_shift_growth_H_down = ema20_1H <= ema20_3H && ema20_3H <= ema20_5H;
+      bool ema_lt_criteria_s1 = ema20_s1 <= ema50_s1 && ema50_s1 <= ema70_s1;
+      bool ema_lt_criteria_s3 = ema20_s3 <= ema50_s3 && ema50_s3 <= ema70_s3;
+      bool ema_lt_criteria_s5 = ema20_s5 <= ema50_s5 && ema50_s5 <= ema70_s5;
+
+      bool ema_shift_growth_H1_up = ema20_s1 >= ema20_s3 && ema20_s3 >= ema20_s5;
+      bool ema_shift_growth_H1_down = ema20_s1 <= ema20_s3 && ema20_s3 <= ema20_s5;
+
+      bool ema_shift_growth_H4_up = ema20_1H >= ema20_3H && ema20_3H >= ema20_5H;
+      bool ema_shift_growth_H4_down = ema20_1H <= ema20_3H && ema20_3H <= ema20_5H;
 
       bool ema_shift_growth_W_up = ema20_1W >= ema20_2W && ema20_2W >= ema20_3W;
       bool ema_shift_growth_W_down = ema20_1W <= ema20_2W && ema20_2W <= ema20_3W;
 
       // bool ATR細過180Range_20% =
 
-      bool buyCondition = currentPrice > periodHigh && emaCountCriteria.isBuy(ema_gt_criteria) 
-                           && ema_shift_growth_m5_up && ema_shift_growth_H_up && ema_shift_growth_W_up;  //&& atr < 0.0015; currentPrice>ema20;
-      bool sellCondition = currentPrice < periodLow && emaCountCriteria.isSell(ema_lt_criteria) 
-                           && ema_shift_growth_m5_down && ema_shift_growth_H_down && ema_shift_growth_W_down; //&& atr < 0.0003; currentPrice<ema20;
+      bool buyCondition = currentPrice > periodHigh 
+                            // && emaCountCriteria.isBuy(ema_gt_criteria_s1) 
+                            && ema_gt_criteria_s1
+                            && ema_gt_criteria_s3
+                            && ema_gt_criteria_s5
+                            // && ema_shift_growth_H1_up 
+                            // && ema_shift_growth_H4_up 
+                            // && ema_shift_growth_W_up
+                            ;  //&& atr < 0.0015; currentPrice>ema20;
+      bool sellCondition = currentPrice < periodLow
+                            // && emaCountCriteria.isSell(ema_lt_criteria) 
+                            && ema_lt_criteria_s1
+                            && ema_lt_criteria_s3
+                            && ema_lt_criteria_s5
+                            // && ema_shift_growth_H1_down 
+                            // && ema_shift_growth_H4_down 
+                            // && ema_shift_growth_W_down
+                            ; //&& atr < 0.0003; currentPrice<ema20;
 
       if (buyCondition) {
          buyOrderSendWithTlSp(Ask, 0, 0);
