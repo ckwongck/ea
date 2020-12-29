@@ -1,2 +1,7 @@
 **.ex4
 /mqlcache.dat
+/Include/*
+/Libraries/*
+/Logs/*
+/Files/*
+/Scripts/Examples/*
