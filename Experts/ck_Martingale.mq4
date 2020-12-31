@@ -208,10 +208,13 @@ void OnTick() {
     // bool ema_lt_criteria_s3 = ema20_s3 <= ema50_s3 && ema50_s3 <= ema70_s3;
     // bool ema_lt_criteria_s5 = ema20_s5 <= ema50_s5 && ema50_s5 <= ema70_s5;
 
-    bool ema20_shift_growth_H1_up = ema20_s1 >= ema20_s3 && ema20_s3 >= ema20_s5;
-    bool ema50_shift_growth_H1_up = ema50_s1 >= ema50_s3 && ema50_s3 >= ema50_s5;
-    bool ema20_shift_growth_H1_down = ema20_s1 <= ema20_s3 && ema20_s3 <= ema20_s5;
-    bool ema50_shift_growth_H1_down = ema50_s1 <= ema50_s3 && ema50_s3 <= ema50_s5;
+    bool ema20_shift_growth_H1_up = ema20_s1 > ema20_s3 && ema20_s3 > ema20_s5;
+    bool ema50_shift_growth_H1_up = ema50_s1 > ema50_s3 && ema50_s3 > ema50_s5;
+    bool ema20_ema50_H1_up = ema20_s5 > ema50_s1;
+    
+    bool ema20_shift_growth_H1_down = ema20_s1 < ema20_s3 && ema20_s3 < ema20_s5;
+    bool ema50_shift_growth_H1_down = ema50_s1 < ema50_s3 && ema50_s3 < ema50_s5;
+    bool ema20_ema50_H1_down = ema20_s5 < ema50_s1;
 
     // bool ema_shift_growth_H4_up = ema20_1H >= ema20_3H && ema20_3H >= ema20_5H;
     // bool ema_shift_growth_H4_down = ema20_1H <= ema20_3H && ema20_3H <= ema20_5H;
@@ -223,6 +226,7 @@ void OnTick() {
 
     bool holdCondition =     ema20_shift_growth_H1_up
                           && ema50_shift_growth_H1_up
+                          && ema20_ema50_H1_up
                           // && ema_gt_criteria_s1
                           // && ema_gt_criteria_s3
                           // && ema_gt_criteria_s5
@@ -233,6 +237,7 @@ void OnTick() {
 
     bool unholdCondition =     ema20_shift_growth_H1_down
                             && ema50_shift_growth_H1_down
+                            && ema20_ema50_H1_down
                             // && ema_lt_criteria_s1
                             // && ema_lt_criteria_s3
                             // && ema_lt_criteria_s5
