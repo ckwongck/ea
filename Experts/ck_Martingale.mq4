@@ -269,7 +269,7 @@ void OnTick() {
     else if (positions > 0) {
         // long position
         // sellCondition || ( && currentPrice < trailOrder.trailHighLowPrice - trailOrder.trailAmount)
-        if (sellCondition || (!holdCondition && currentPrice >= trailOrder.averagePrice + trailOrder.trailAmount)) {
+        if (sellCondition || (!holdCondition && currentPrice >= trailOrder.averagePrice + 2 * trailOrder.trailAmount)) {
           closeAllPosition();
         } 
         else if (currentPrice < trailOrder.firstPrice - trailOrder.trailAmount * trailOrder.numberOfOrders) {
