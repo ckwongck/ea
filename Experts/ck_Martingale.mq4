@@ -13,27 +13,35 @@
 class TrailOrder{
    public: 
    int action;
-   double holdingOrderPrice;
+   double firstPrice;
+   double averagePrice;
    double trailHighLowPrice;
    double trailAmount;
-   int positions;
+   double positions;
+   int numberOfOrders;
 
    TrailOrder(){}
    void resetTrailValues() {
       action = NULL;
-      holdingOrderPrice = 0;
+      firstPrice = 0;
+      averagePrice = 0;
       trailHighLowPrice = 0;
       trailAmount = 0;
       positions = 0;
+      numberOfOrders = 0;
    }
-   void setTrailValues(double i_price, double i_trailAmount) {
-      holdingOrderPrice = i_price;
+   void setTrailValues(double i_price, double i_position, double i_trailAmount) {
+      firstPrice = i_price;
+      averagePrice = i_price;
       trailHighLowPrice = i_price;
       trailAmount = i_trailAmount;
-      positions = 1;
+      positions = i_position;
+      numberOfOrders = 1;
    }
-   void addPosition() {
-      positions++;
+   void addPosition(double i_price, double i_position) {
+      averagePrice = (averagePrice * positions + i_price * i_position) / ( positions + i_position );
+      positions += i_position;
+      numberOfOrders += 1; 
    }
 };
 
@@ -251,7 +259,7 @@ void OnTick() {
     if (positions == 0) {
         if (buyCondition) {
           buyOrderSendWithTlSp(Ask, 0, 0);
-          trailOrder.setTrailValues(Ask, stopLossRatio * atr); // trail
+          trailOrder.setTrailValues(Ask, getLots(), stopLossRatio * atr); // trail
         } 
         // else if (sellCondition) {
         //    sellOrderSendWithTlSp(Bid, 0, 0);
@@ -261,12 +269,12 @@ void OnTick() {
     else if (positions > 0) {
         // long position
         // sellCondition || ( && currentPrice < trailOrder.trailHighLowPrice - trailOrder.trailAmount)
-        if (sellCondition || (!holdCondition && currentPrice >= trailOrder.holdingOrderPrice + trailOrder.trailAmount * (1 - trailOrder.positions/2))) {
+        if (sellCondition || (!holdCondition && currentPrice >= trailOrder.averagePrice + trailOrder.trailAmount)) {
           closeAllPosition();
         } 
-        else if (currentPrice < trailOrder.holdingOrderPrice - trailOrder.trailAmount * trailOrder.positions) {
+        else if (currentPrice < trailOrder.firstPrice - trailOrder.trailAmount * trailOrder.numberOfOrders) {
           buyOrderSendWithTlSp(Ask, 0, 0);
-          trailOrder.addPosition();
+          trailOrder.addPosition(Ask, getLots());
         }
     } 
     // else {
