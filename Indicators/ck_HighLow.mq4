@@ -11,7 +11,7 @@
 #define minor 0
 
 #property indicator_chart_window
-#property indicator_buffers 8
+#property indicator_buffers 11
 #property indicator_color1  Gold
 #property indicator_color2  DodgerBlue
 #property indicator_color3 PowderBlue
@@ -20,6 +20,9 @@
 #property indicator_color6 LightBlue
 #property indicator_color7 Khaki
 #property indicator_color8 Gainsboro
+#property indicator_color9 Aqua
+#property indicator_color10 MediumTurquoise
+#property indicator_color11 DarkOrchid
 /*extern*/ int N = 20;
 /*extern*/ int N2 = 5;
 
@@ -31,6 +34,9 @@ double ArrBuf4[];
 double ArrBuf5[];
 double ArrBuf6[];
 double ArrBuf7[];
+double ArrBuf8[];
+double ArrBuf9[];
+double ArrBuf10[];
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -43,6 +49,9 @@ void init() {
    SetIndexStyle(5, DRAW_LINE, STYLE_SOLID, 1);
    SetIndexStyle(6, DRAW_LINE, STYLE_SOLID, 1);
    SetIndexStyle(7, DRAW_LINE, STYLE_SOLID, 1);
+   SetIndexStyle(8, DRAW_LINE, STYLE_SOLID, 1);
+   SetIndexStyle(9, DRAW_LINE, STYLE_SOLID, 1);
+   SetIndexStyle(10, DRAW_LINE, STYLE_SOLID, 1);
 
    SetIndexDrawBegin(0, N);
    SetIndexDrawBegin(1, N);
@@ -52,6 +61,9 @@ void init() {
    SetIndexDrawBegin(5, N);
    SetIndexDrawBegin(6, N);
    SetIndexDrawBegin(7, N);
+   SetIndexDrawBegin(8, N);
+   SetIndexDrawBegin(9, N);
+   SetIndexDrawBegin(10, N);
 
    SetIndexBuffer(0, UpperBuf);
    SetIndexBuffer(1, LowerBuf);
@@ -61,6 +73,9 @@ void init() {
    SetIndexBuffer(5, ArrBuf5);
    SetIndexBuffer(6, ArrBuf6);
    SetIndexBuffer(7, ArrBuf7);
+   SetIndexBuffer(8, ArrBuf8);
+   SetIndexBuffer(9, ArrBuf9);
+   SetIndexBuffer(10, ArrBuf10);
 }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -102,8 +117,8 @@ void start() {
       double ema50_s5 = iMA(NULL, PERIOD_H1, emaPeriod50, 0, MODE_EMA, PRICE_CLOSE, i + 2);
 
       double ema70_s1 = iMA(NULL, PERIOD_H1, emaPeriod70, 0, MODE_EMA, PRICE_CLOSE, i + 0);
-      double ema70_s3 = iMA(NULL, PERIOD_H1, emaPeriod70, 0, MODE_EMA, PRICE_CLOSE, i + 1);
-      double ema70_s5 = iMA(NULL, PERIOD_H1, emaPeriod70, 0, MODE_EMA, PRICE_CLOSE, i + 2);
+      // double ema70_s3 = iMA(NULL, PERIOD_H1, emaPeriod70, 0, MODE_EMA, PRICE_CLOSE, i + 1*emaPeriod70);
+      // double ema70_s5 = iMA(NULL, PERIOD_H1, emaPeriod70, 0, MODE_EMA, PRICE_CLOSE, i + 2*emaPeriod70);
 
       double ema20_1H = iMA(NULL, PERIOD_H4, emaPeriod20, 0, MODE_EMA, PRICE_CLOSE, i + 1);
       double ema20_3H = iMA(NULL, PERIOD_H4, emaPeriod20, 0, MODE_EMA, PRICE_CLOSE, i + 3);
@@ -117,16 +132,27 @@ void start() {
       double periodHigh = iHigh(NULL, PERIOD_H1, iHighest(NULL, PERIOD_H1, MODE_HIGH, highLowRangePeriod, i + 1));
       double periodLow = iLow(NULL, PERIOD_H1, iLowest(NULL, PERIOD_H1, MODE_LOW, highLowRangePeriod, i + 1));
 
+      double nearbyRange = 1*atr;
+      double uppperEma70Nearby = ema70_s1  - nearbyRange;
+      double lowerEma70Nearby =  ema70_s1  + nearbyRange;
+
       UpperBuf[i] = periodHigh;
       LowerBuf[i] = periodLow;
-      
+
       ArrBuf2[i] = ema20_s1;
-      ArrBuf3[i] = ema20_s3;
-      ArrBuf4[i] = ema20_s5;
+      // ArrBuf3[i] = ema20_s3;
+      // ArrBuf4[i] = ema20_s5;
 
       ArrBuf5[i] = ema50_s1;
-      ArrBuf6[i] = ema50_s3;
-      ArrBuf7[i] = ema50_s5;
+      // ArrBuf6[i] = ema50_s3;
+      // ArrBuf7[i] = ema50_s5;
+
+      ArrBuf8[i] = ema70_s1;
+      // ArrBuf9[i] = ema70_s3;
+      // ArrBuf10[i] = ema70_s5;
+
+      ArrBuf9[i] = uppperEma70Nearby;
+      ArrBuf10[i] = lowerEma70Nearby;
 
       // UpperBuf[i] = iHigh(NULL, 0, iHighest(NULL, 0, MODE_HIGH, N, i)) + N2*Point;
       // LowerBuf[i] = iLow(NULL, 0, iLowest(NULL, 0, MODE_LOW, N, i)) - N2*Point;

@@ -115,7 +115,8 @@ void buyOrderSendWithTlSp(double price, double takeProfit, double stopLoss) {
 
    if (ticket > 0) {
       if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES))
-         Print("buy order opened : ", OrderOpenPrice());
+         return;
+        //  Print("buy order opened : ", OrderOpenPrice());
    } else
       Print("Error opening BUY order : ", GetLastError());
 }
@@ -132,7 +133,8 @@ void sellOrderSendWithTlSp(double price, double takeProfit, double stopLoss) {
 
    if (ticket > 0) {
       if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES))
-         Print("sell order opened : ", OrderOpenPrice());
+        return;
+        //  Print("sell order opened : ", OrderOpenPrice());
    } else
       Print("Error opening BUY order : ", GetLastError());
 }
@@ -218,11 +220,11 @@ void OnTick() {
 
     bool ema20_shift_growth_H1_up = ema20_s1 > ema20_s3 && ema20_s3 > ema20_s5;
     bool ema50_shift_growth_H1_up = ema50_s1 > ema50_s3 && ema50_s3 > ema50_s5;
-    bool ema20_ema50_H1_up = ema20_s5 > ema50_s1;
+    bool ema_diff_H1_up = ema20_s5 > ema50_s1 > ema70_s1;
     
     bool ema20_shift_growth_H1_down = ema20_s1 < ema20_s3 && ema20_s3 < ema20_s5;
     bool ema50_shift_growth_H1_down = ema50_s1 < ema50_s3 && ema50_s3 < ema50_s5;
-    bool ema20_ema50_H1_down = ema20_s5 < ema50_s1;
+    bool ema_diff_H1_down = ema20_s5 < ema50_s1 > ema70_s1;
 
     // bool ema_shift_growth_H4_up = ema20_1H >= ema20_3H && ema20_3H >= ema20_5H;
     // bool ema_shift_growth_H4_down = ema20_1H <= ema20_3H && ema20_3H <= ema20_5H;
@@ -232,9 +234,13 @@ void OnTick() {
 
     // bool ATR細過180Range_20% =
 
+    bool upperEma70   = currentPrice > ema70_s1;
+    bool belowEma70 = currentPrice < ema70_s1;
+
     bool holdCondition =     ema20_shift_growth_H1_up
                           && ema50_shift_growth_H1_up
-                          && ema20_ema50_H1_up
+                          && upperEma70
+                          // && ema_diff_H1_up
                           // && ema_gt_criteria_s1
                           // && ema_gt_criteria_s3
                           // && ema_gt_criteria_s5
@@ -245,7 +251,8 @@ void OnTick() {
 
     bool unholdCondition =     ema20_shift_growth_H1_down
                             && ema50_shift_growth_H1_down
-                            && ema20_ema50_H1_down
+                            && belowEma70
+                            // && ema_diff_H1_down
                             // && ema_lt_criteria_s1
                             // && ema_lt_criteria_s3
                             // && ema_lt_criteria_s5
@@ -254,8 +261,12 @@ void OnTick() {
                             // && ema_shift_growth_W_down
                             ; //&& atr < 0.0003; currentPrice<ema20;
 
-    bool buyCondition = currentPrice > periodHigh && holdCondition;
-    bool sellCondition = currentPrice < periodLow && unholdCondition;
+    double nearbyRange = 1*atr;
+    bool isEma70Nearby = ema70_s1  - nearbyRange < currentPrice && currentPrice < ema70_s1  + nearbyRange;
+    bool isNotEma70Nearby = !isEma70Nearby;
+
+    bool buyCondition  = holdCondition   && isNotEma70Nearby && currentPrice > periodHigh;
+    bool sellCondition = unholdCondition && isNotEma70Nearby && currentPrice < periodLow;
     if (positions == 0) {
         if (buyCondition) {
           buyOrderSendWithTlSp(Ask, 0, 0);
